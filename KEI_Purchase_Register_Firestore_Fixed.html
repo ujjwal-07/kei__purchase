@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KEI Purchase Department — Purchase Order Register</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root{
+    --ink:#1C1F26;
+    --paper:#F3F3F1;
+    --panel:#FFFFFF;
+    --line:#CBCFD6;
+    --line-strong:#9AA0AC;
+    --muted:#5B6270;
+    --navy:#1F2D3D;
+    --navy-deep:#141D28;
+    --brass:#8A6A2F;
+    --brass-bg:#F3EBD9;
+    --green:#1F6B44;
+    --green-bg:#E3F0E7;
+    --red:#9E3226;
+    --red-bg:#F6E4E1;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    font-size:13.5px;
+  }
+  .wrap{max-width:1060px;margin:0 auto;padding:26px 20px 80px;}
+
+  .letterhead{
+    border-bottom:2px solid var(--navy);
+    padding-bottom:14px;margin-bottom:18px;
+    display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;
+  }
+  .masthead{font-family:'Source Serif 4',serif;font-weight:700;font-size:22px;color:var(--navy-deep);letter-spacing:-0.01em;}
+  .masthead .doc{display:block;font-family:'Inter',sans-serif;font-weight:500;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:3px;}
+  .today{font-size:12px;color:var(--muted);text-align:right;}
+  .today b{color:var(--ink);font-weight:600;}
+  .connStatus{font-size:10.5px;margin-top:3px;}
+  .connStatus.ok{color:var(--green);}
+  .connStatus.bad{color:var(--red);}
+
+  #roleGate{
+    background:var(--panel);border:1px solid var(--line);
+    padding:40px 28px;text-align:center;margin-top:60px;
+  }
+  #roleGate h2{font-family:'Source Serif 4',serif;font-size:19px;margin:0 0 4px;color:var(--navy-deep);}
+  #roleGate p{color:var(--muted);font-size:13px;margin:0 0 22px;}
+  .roleGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:420px;margin:0 auto;}
+  .roleBtn{
+    border:1px solid var(--line-strong);background:var(--paper);
+    padding:14px 10px;cursor:pointer;
+    font-family:'Inter',sans-serif;font-size:13.5px;font-weight:600;color:var(--ink);
+    transition:border-color .15s, background .15s;
+  }
+  .roleBtn:hover{border-color:var(--navy);background:#EDEEF0;}
+  .roleBtn small{display:block;font-weight:500;color:var(--muted);font-size:10.5px;margin-top:3px;text-transform:uppercase;letter-spacing:.05em;}
+
+  #app{display:none;}
+  .roleBar{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--panel);border:1px solid var(--line);
+    padding:9px 14px;margin-bottom:18px;font-size:12.5px;
+  }
+  .roleBar .who b{font-weight:600;color:var(--navy-deep);}
+  .roleBar .tag{
+    background:var(--navy);color:#fff;padding:2px 8px;
+    font-size:10px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;
+  }
+  .switchLink{color:var(--muted);cursor:pointer;font-size:11.5px;text-decoration:underline;text-underline-offset:2px;}
+
+  .summary{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:20px;}
+  .sumCard{background:var(--panel);padding:12px 13px;}
+  .sumCard .n{font-family:'IBM Plex Mono',monospace;font-size:16.5px;font-weight:600;color:var(--navy-deep);line-height:1.3;word-break:break-word;}
+  .sumCard .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:3px;}
+
+  .panel{background:var(--panel);border:1px solid var(--line);padding:18px;margin-bottom:20px;}
+  .panel h3{font-family:'Source Serif 4',serif;font-size:15px;margin:0 0 4px;color:var(--navy-deep);font-weight:700;}
+  .panel .hint{font-size:11.5px;color:var(--muted);margin:0 0 14px;}
+
+  .formGrid{display:flex;flex-wrap:wrap;gap:10px;}
+  .field{flex:1 1 150px;}
+  .field.narrow{flex:0 1 90px;}
+  .field.wide{flex:2 1 240px;}
+  .field label{display:block;font-size:10.5px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;}
+  .field label small{text-transform:none;letter-spacing:0;font-style:italic;}
+  .field input, .field select{
+    width:100%;padding:9px 10px;border:1px solid var(--line-strong);border-radius:0;
+    font-size:13px;font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);
+  }
+  .field input:focus, .field select:focus{outline:2px solid var(--navy);outline-offset:0;background:#fff;}
+
+  .formFooter{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-top:14px;padding-top:14px;border-top:1px dashed var(--line-strong);flex-wrap:wrap;gap:10px;
+  }
+  .liveCalc{font-size:12.5px;color:var(--muted);}
+  .liveCalc b{color:var(--navy-deep);font-family:'IBM Plex Mono',monospace;font-size:14.5px;}
+  .addBtn{
+    background:var(--navy);color:#fff;border:none;border-radius:0;
+    padding:12px 24px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;
+    text-transform:uppercase;letter-spacing:.05em;
+    min-width:180px;
+    box-shadow:0 2px 4px rgba(20,29,40,0.15);
+    -webkit-tap-highlight-color:rgba(255,255,255,0.2);
+    transition:background 0.15s;
+  }
+  .addBtn:hover{background:var(--navy-deep);}
+  .addBtn:active{background:#0F1620;transform:translateY(1px);}
+  .addBtn.editing{background:var(--brass);}
+  .addBtn.editing:hover{background:#6E5525;}
+
+  .addAnotherBtn{
+    background:var(--green);color:#fff;border:none;border-radius:0;
+    padding:12px 20px;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;
+    text-transform:uppercase;letter-spacing:.05em;
+    box-shadow:0 2px 4px rgba(31,107,68,0.2);
+    animation:pulse 2s ease-in-out infinite;
+  }
+  .addAnotherBtn:hover{background:#155234;}
+  .addAnotherBtn:active{background:#0F3D26;transform:translateY(1px);}
+  @keyframes pulse{
+    0%,100%{box-shadow:0 2px 4px rgba(31,107,68,0.2);}
+    50%{box-shadow:0 2px 12px rgba(31,107,68,0.5);}
+  }
+
+  .filterRow{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+  .filterRow input[type=date]{padding:6px 9px;border:1px solid var(--line-strong);font-size:12.5px;font-family:'Inter',sans-serif;}
+  .filterRow select{padding:6px 9px;border:1px solid var(--line-strong);font-size:12.5px;font-family:'Inter',sans-serif;background:var(--panel);color:var(--ink);}
+  .chip{border:1px solid var(--line-strong);background:var(--panel);padding:5px 12px;font-size:11.5px;cursor:pointer;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+  .chip.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .exportBtn{
+    margin-left:auto;border:1px solid var(--navy);background:var(--panel);color:var(--navy);
+    padding:6px 14px;font-size:11.5px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:.04em;
+  }
+  .exportBtn:hover{background:var(--navy);color:#fff;}
+
+  .backupBanner{
+    background:var(--brass-bg);border:1px solid var(--brass);
+    padding:14px 18px;margin-bottom:16px;
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+  }
+  .backupBanner .bbText{color:var(--brass);font-size:13px;font-weight:600;}
+  .backupBanner .bbText small{display:block;font-weight:500;color:var(--muted);font-size:11.5px;margin-top:2px;font-style:italic;}
+  .backupBanner .bbActions{display:flex;gap:8px;}
+  .backupBtn{
+    background:var(--brass);color:#fff;border:none;padding:9px 18px;
+    font-size:12.5px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:.04em;
+  }
+  .backupBtn:hover{background:#6E5525;}
+  .backupSkip{
+    background:transparent;color:var(--brass);border:1px solid var(--brass);
+    padding:9px 14px;font-size:12px;font-weight:500;cursor:pointer;
+  }
+  .backupSkip:hover{background:#fff;}
+
+  .tableScroll{overflow-x:auto;border:1px solid var(--line);background:var(--panel);}
+  table.register{width:100%;border-collapse:collapse;min-width:920px;}
+  table.register thead th{
+    background:var(--navy);color:#EDEFF3;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
+    padding:9px 10px;text-align:left;white-space:nowrap;
+  }
+  table.register thead th.num{text-align:right;}
+  table.register tbody td{
+    padding:8px 10px;border-bottom:1px solid var(--line);font-size:12.5px;vertical-align:top;
+  }
+  table.register tbody td.num{text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;}
+  table.register tbody tr.dataRow:hover{background:#FAFAF8;}
+  .dateRow td{
+    background:var(--paper);font-size:11px;font-weight:600;color:var(--navy-deep);
+    text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;border-top:2px solid var(--line-strong);border-bottom:1px solid var(--line);
+  }
+  .totalsRow td{
+    background:#EEEFEC;font-weight:600;font-size:11.5px;border-bottom:2px solid var(--line-strong);
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .totalsRow td.label{font-family:'Inter',sans-serif;text-transform:uppercase;letter-spacing:.04em;font-size:10.5px;color:var(--muted);}
+  .ref{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);}
+  .remarks{display:block;font-size:11px;color:var(--muted);font-style:italic;margin-top:2px;}
+
+  .badge{display:inline-block;padding:3px 9px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;}
+  .badge.pending{background:var(--brass-bg);color:var(--brass);}
+  .badge.approved{background:var(--green-bg);color:var(--green);}
+  .badge.rejected{background:var(--red-bg);color:var(--red);}
+
+  .actBtn{border:1px solid var(--line-strong);border-radius:0;background:var(--panel);padding:4px 9px;font-size:10.5px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:.03em;margin-right:4px;}
+  .actBtn.approve{color:var(--green);border-color:var(--green);}
+  .actBtn.approve:hover{background:var(--green);color:#fff;}
+  .actBtn.reject{color:var(--red);border-color:var(--red);}
+  .actBtn.reject:hover{background:var(--red);color:#fff;}
+  .actBtn.del{color:var(--muted);}
+  .actBtn.del:hover{background:#E8EAED;}
+
+  .empty{text-align:center;color:var(--muted);font-size:13px;padding:40px 10px;border:1px dashed var(--line-strong);background:var(--panel);}
+  .loading{text-align:center;color:var(--muted);font-size:12.5px;padding:30px;}
+  .configWarning{
+    background:var(--red-bg);color:var(--red);border:1px solid var(--red);
+    padding:14px 16px;font-size:12.5px;margin-bottom:18px;line-height:1.6;
+  }
+  .configWarning code{background:#fff;padding:1px 5px;font-family:'IBM Plex Mono',monospace;}
+
+  @media (max-width:820px){
+    .summary{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="letterhead">
+    <div class="masthead">KEI Purchase Department<span class="doc">Purchase Order Register</span></div>
+    <div class="today">
+      <div id="todayLabel"></div>
+      <div class="connStatus" id="connStatus">Connecting…</div>
+    </div>
+  </div>
+
+  <div id="configWarning" class="configWarning" style="display:none;"></div>
+
+  <div id="roleGate">
+    <h2>Who's working?</h2>
+    <p>Select your name to continue — this register is limited to the purchase group.</p>
+    <div class="roleGrid" id="roleGrid"></div>
+  </div>
+
+  <div id="app">
+    <div class="roleBar">
+      <div class="who">Signed in as <b id="whoName"></b><span class="tag" id="whoTag"></span></div>
+      <span class="switchLink" id="switchRole">Switch</span>
+    </div>
+
+    <div class="summary" id="summary"></div>
+
+    <div class="panel" id="addPanel" style="display:none;">
+      <h3>New Purchase Request</h3>
+      <p class="hint">Enter value in USD, EUR or INR. For USD/EUR, enter today's exchange rate manually — the INR order value is calculated for you.</p>
+      <div class="formGrid">
+        <div class="field wide"><label>Brand</label>
+          <input id="fBrand" type="text" list="brandOptions" placeholder="Pick or type a brand" autocomplete="off">
+          <datalist id="brandOptions">
+            <option value="ELAC">
+            <option value="Fyne Audio">
+            <option value="Primare">
+            <option value="Advance Paris">
+            <option value="ToneWinner">
+            <option value="Totem Acoustic">
+            <option value="Origin Acoustics">
+            <option value="Adept Audio">
+            <option value="Fonestar">
+            <option value="Ecler">
+            <option value="Inakustik">
+            <option value="Kasper">
+            <option value="Dune HD">
+            <option value="JVC">
+          </datalist>
+        </div>
+        <div class="field wide"><label>Model</label><input id="fModel" type="text" placeholder="e.g. Debut B6.2" autocomplete="off"></div>
+        <div class="field narrow"><label>Qty</label><input id="fQty" type="number" min="1" placeholder="0" autocomplete="off"></div>
+        <div class="field"><label>Unit Value</label><input id="fValue" type="number" min="0" step="0.01" placeholder="0.00" autocomplete="off"></div>
+        <div class="field narrow"><label>Currency</label>
+          <select id="fCurrency">
+            <option value="USD">USD</option>
+            <option value="INR">INR</option>
+            <option value="EUR">EUR</option>
+          </select>
+        </div>
+        <div class="field" id="rateField"><label>Exchange Rate <small>(₹ per unit)</small></label><input id="fRate" type="number" min="0" step="0.01" placeholder="e.g. 86.20" autocomplete="off"></div>
+        <div class="field wide"><label>Remarks <small>(optional)</small></label><input id="fRemarks" type="text" placeholder="e.g. urgent, backorder, project name" autocomplete="off"></div>
+      </div>
+      <div class="formFooter">
+        <div class="liveCalc">Line Total (INR): <b id="liveCalc">₹0</b></div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span class="switchLink" id="cancelEdit" style="display:none;">Cancel edit</span>
+          <button class="addAnotherBtn" id="addAnotherBtn" style="display:none;" type="button">+ Add Another</button>
+          <button class="addBtn" id="addBtn">Add to Register</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="backupBanner" style="display:none;"></div>
+
+    <div class="filterRow">
+      <span class="chip active" data-filter="today">Today</span>
+      <span class="chip" data-filter="pending">Pending Only</span>
+      <span class="chip" data-filter="all">All Dates</span>
+      <input type="date" id="datePick">
+      <select id="requesterFilter">
+        <option value="all">Requested By: All</option>
+        <option value="Satish">Requested By: Satish</option>
+        <option value="Archana">Requested By: Archana</option>
+      </select>
+      <button class="exportBtn" id="exportBtn">Export to Excel</button>
+    </div>
+
+    <div id="list"><div class="loading">Loading register…</div></div>
+  </div>
+
+</div>
+
+<!-- Firebase (compat SDK — loaded from cdnjs so this works inside a Claude artifact) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.14.1/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.14.1/firebase-firestore-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+/* =========================================================================
+   PASTE YOUR FIREBASE CONFIG HERE.
+   Firebase Console → Project settings → General → Your apps → SDK setup
+   and configuration → "Config" radio button.
+   ========================================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyCRsKdcK7BY4Lvw8t7_ZRZs_QJMpY9hu3M",
+  authDomain: "keipurchasedepartment.firebaseapp.com",
+  projectId: "keipurchasedepartment",
+  storageBucket: "keipurchasedepartment.firebasestorage.app",
+  messagingSenderId: "1073905210014",
+  appId: "1:1073905210014:web:afabb45736ca430801618f",
+  measurementId: "G-ECD9GHWY30"
+};
+/* ========================================================================= */
+
+let db = null;
+let firebaseReady = false;
+try{
+  if(firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf('PASTE_') !== 0){
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+
+    // Enable Firestore offline persistence where supported.
+    // This also helps the register keep a local cache while reconnecting.
+    db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
+      console.warn('Firestore persistence unavailable:', err.code, err.message);
+    });
+
+    firebaseReady = true;
+  }
+}catch(e){
+  console.error('Firebase init failed', e);
+}
+
+const COLLECTION = 'purchaseRequests';
+const META_DOC = 'meta/backup';
+const BACKUP_INTERVAL_DAYS = 7;
+
+let lastBackup = null; // { at: ISO string, by: name } or null
+
+const ROLES = {
+  satish:  { name:'Satish',        type:'requester', label:'Requester' },
+  archana: { name:'Archana',       type:'requester', label:'Requester' },
+  soham:   { name:'Soham Chawla',  type:'approver',  label:'Approver'  },
+  sanjay:  { name:'Sanjay Chawla', type:'approver',  label:'Approver'  },
+};
+const CUR_SYMBOL = { USD:'$', EUR:'€', INR:'₹' };
+
+let requests = [];
+let currentRoleKey = null;
+let filterMode = 'all'; // Default: show records from all dates
+let filterDate = null;
+let editingId = null;
+let requesterFilter = 'all';
+
+const $ = (id) => document.getElementById(id);
+
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function fmtDate(iso){
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-IN', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+}
+function fmtINR(n){
+  return '₹' + Math.round(Number(n||0)).toLocaleString('en-IN');
+}
+function fmtFC(n, currency){
+  const locale = currency === 'INR' ? 'en-IN' : 'en-US';
+  return (CUR_SYMBOL[currency]||'') + Number(n||0).toLocaleString(locale, {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function uid(){
+  return 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+function nextRef(){
+  const compact = todayISO().slice(2).replace(/-/g,'');
+  const seq = requests.filter(r => r.date === todayISO()).length + 1;
+  return 'PO' + compact + '-' + String(seq).padStart(2,'0');
+}
+
+// ---------- config warning ----------
+if(!firebaseReady){
+  $('configWarning').style.display = 'block';
+  $('configWarning').innerHTML = 'Firebase is not configured yet. Open this file and paste your project\'s Firebase config into the '
+    + '<code>firebaseConfig</code> object near the top of the script, then reload. Until then the register cannot load or save data.';
+  $('connStatus').textContent = 'Not connected';
+  $('connStatus').className = 'connStatus bad';
+} else {
+  $('connStatus').textContent = 'Connected';
+  $('connStatus').className = 'connStatus ok';
+}
+
+// ---------- role gate ----------
+function buildRoleGate(){
+  const grid = $('roleGrid');
+  grid.innerHTML = '';
+  Object.entries(ROLES).forEach(([key, r]) => {
+    const btn = document.createElement('button');
+    btn.className = 'roleBtn';
+    btn.innerHTML = r.name + '<small>' + r.label + '</small>';
+    btn.onclick = () => selectRole(key);
+    grid.appendChild(btn);
+  });
+}
+function selectRole(key){
+  currentRoleKey = key;
+  $('roleGate').style.display = 'none';
+  $('app').style.display = 'block';
+  const r = ROLES[key];
+  $('whoName').textContent = r.name;
+  $('whoTag').textContent = r.label;
+  $('addPanel').style.display = (r.type === 'requester') ? 'block' : 'none';
+  render();
+}
+$('switchRole').onclick = () => {
+  currentRoleKey = null;
+  $('app').style.display = 'none';
+  $('roleGate').style.display = 'block';
+};
+
+// ---------- Firestore live sync ----------
+function startListening(){
+  console.log('[Firestore] Starting listener for collection:', COLLECTION);
+  if(!firebaseReady){
+    showMessage('DIAGNOSTIC: Firebase not ready — data will not load.', true);
+    return;
+  }
+  showMessage('DIAGNOSTIC: Connecting to Firestore…', false);
+  db.collection(COLLECTION).onSnapshot(
+    (snap) => {
+      // Always include the Firestore document ID, even if an older record
+      // does not contain its own `id` field.
+      const raw = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+      const source = snap.metadata.fromCache ? 'local cache' : 'Firestore server';
+      console.log('[Firestore source]', source);
+
+      // DIAGNOSTIC: show what the read returned
+      const today = todayISO();
+      const todayCount = raw.filter(r => r.date === today).length;
+      showMessage('DIAGNOSTIC: Read ' + raw.length + ' total records from Firestore. ' + todayCount + ' are dated today (' + today + '). If you added entries today but this shows 0 or wrong count, check the console. Dates found: ' + [...new Set(raw.map(r => r.date))].sort().reverse().slice(0,5).join(', '), false);
+      console.log('[Firestore read] Total:', raw.length, '| Today:', todayCount, '| Today ISO:', today);
+      console.log('[Firestore read] All dates:', [...new Set(raw.map(r => r.date))].sort());
+      console.log('[Firestore read] Records:', raw);
+      raw.sort((a, b) => {
+        const aKey = a.createdAt || new Date(a.date + 'T00:00:00').getTime() || 0;
+        const bKey = b.createdAt || new Date(b.date + 'T00:00:00').getTime() || 0;
+        return bKey - aKey;
+      });
+      requests = raw;
+      $('connStatus').textContent = snap.metadata.fromCache ? 'Offline cache' : 'Connected to Firestore';
+      $('connStatus').className = 'connStatus ok';
+      render();
+    },
+    (err) => {
+      console.error('Firestore listen error', err);
+      showMessage('DIAGNOSTIC: Firestore listen FAILED — ' + err.message + ' — check rules and connection.', true);
+      $('connStatus').textContent = 'Connection error';
+      $('connStatus').className = 'connStatus bad';
+    }
+  );
+  db.doc(META_DOC).onSnapshot(
+    (snap) => {
+      lastBackup = snap.exists ? snap.data() : null;
+      renderBackupBanner();
+    },
+    (err) => console.error('Meta listen error', err)
+  );
+}
+
+async function recordBackup(action){
+  // action: 'done' (user exported) or 'skipped' (user snoozed a week)
+  if(!firebaseReady) return;
+  try{
+    await db.doc(META_DOC).set({
+      at: new Date().toISOString(),
+      by: ROLES[currentRoleKey].name,
+      action: action,
+    });
+  }catch(e){ console.error('Record backup error', e); }
+}
+
+function daysSince(iso){
+  if(!iso) return Infinity;
+  const then = new Date(iso).getTime();
+  const now = Date.now();
+  return (now - then) / (1000 * 60 * 60 * 24);
+}
+
+function renderBackupBanner(){
+  const banner = $('backupBanner');
+  if(!banner || !currentRoleKey) return;
+  if(requests.length === 0){ banner.style.display = 'none'; return; }
+  const days = daysSince(lastBackup && lastBackup.at);
+  if(days < BACKUP_INTERVAL_DAYS){ banner.style.display = 'none'; return; }
+
+  const neverBackedUp = !lastBackup;
+  const daysText = neverBackedUp
+    ? 'No backup has been taken yet.'
+    : 'It has been ' + Math.floor(days) + ' days since the last backup'
+      + (lastBackup.by ? ' (by ' + lastBackup.by + ')' : '') + '.';
+
+  banner.className = 'backupBanner';
+  banner.style.display = 'flex';
+  banner.innerHTML =
+    '<div class="bbText">Weekly backup due<small>' + daysText + ' Download all records as Excel and keep the file safe.</small></div>'
+    + '<div class="bbActions">'
+    +   '<button class="backupSkip" onclick="skipBackup()">Remind next week</button>'
+    +   '<button class="backupBtn" onclick="runBackup()">Download backup now</button>'
+    + '</div>';
+}
+
+async function runBackup(){
+  // export ALL dates, all requesters — full backup
+  const prevMode = filterMode, prevReq = requesterFilter, prevDate = filterDate;
+  filterMode = 'all'; requesterFilter = 'all'; filterDate = null;
+  exportToExcel();
+  filterMode = prevMode; requesterFilter = prevReq; filterDate = prevDate;
+  await recordBackup('done');
+  showMessage('Backup downloaded and logged. Keep the Excel file safe.', false);
+}
+
+async function skipBackup(){
+  await recordBackup('skipped');
+  showMessage('Reminder snoozed. You will be prompted again in 7 days.', false);
+}
+
+let msgTimer = null;
+function showMessage(text, isError){
+  let box = document.getElementById('inlineMsg');
+  if(!box){
+    box = document.createElement('div');
+    box.id = 'inlineMsg';
+    box.style.cssText = 'padding:10px 14px;margin-bottom:14px;font-size:12.5px;font-weight:600;';
+    document.getElementById('app').insertBefore(box, document.getElementById('summary'));
+  }
+  box.style.background = isError ? 'var(--red-bg)' : 'var(--green-bg)';
+  box.style.color = isError ? 'var(--red)' : 'var(--green)';
+  box.textContent = text;
+  box.style.display = 'block';
+  if(msgTimer) clearTimeout(msgTimer);
+  msgTimer = setTimeout(() => { box.style.display = 'none'; }, 4000);
+}
+
+async function saveRequest(entry){
+  if(!firebaseReady){ showMessage('Firebase is not configured — see the warning banner at the top.', true); return false; }
+  try{
+    await db.collection(COLLECTION).doc(entry.id).set(entry);
+    return true;
+  }catch(e){
+    console.error('Save error', e);
+    showMessage('SAVE FAILED: ' + (e.code || 'unknown') + ' — ' + (e.message || 'Check Firestore rules and connection.'), true);
+    return false;
+  }
+}
+async function deleteRequestDoc(id){
+  if(!firebaseReady) return false;
+  try{
+    await db.collection(COLLECTION).doc(id).delete();
+    return true;
+  }catch(e){
+    console.error('Delete error', e);
+    showMessage('Could not remove — check your connection and try again.', true);
+    return false;
+  }
+}
+
+// ---------- form helpers ----------
+function syncRateField(){
+  const isINR = $('fCurrency').value === 'INR';
+  $('fRate').disabled = isINR;
+  $('rateField').style.opacity = isINR ? '0.5' : '1';
+  if(isINR) $('fRate').value = '1';
+  else if($('fRate').value === '1') $('fRate').value = '';
+}
+function updateLiveCalc(){
+  const qty = parseFloat($('fQty').value) || 0;
+  const value = parseFloat($('fValue').value) || 0;
+  const rate = $('fCurrency').value === 'INR' ? 1 : (parseFloat($('fRate').value) || 0);
+  const inr = qty * value * rate;
+  $('liveCalc').textContent = fmtINR(inr);
+}
+['fQty','fValue','fRate'].forEach(id => $(id).addEventListener('input', updateLiveCalc));
+$('fCurrency').addEventListener('change', () => { syncRateField(); updateLiveCalc(); });
+syncRateField();
+
+function resetForm(){
+  ['fBrand','fModel','fQty','fValue','fRate','fRemarks'].forEach(id => {
+    const el = $(id);
+    if(!el) return;
+    el.value = '';
+    el.setAttribute('value', '');
+    el.blur(); // release any autofill/completion popup on mobile
+  });
+  $('fCurrency').value = 'USD';
+  syncRateField();
+  updateLiveCalc();
+}
+
+async function addRequest(){
+  // Read raw values, trim, and normalize (handles commas from locale entry)
+  const brand = String($('fBrand').value || '').trim();
+  const model = String($('fModel').value || '').trim();
+  const qtyRaw = String($('fQty').value || '').replace(/,/g, '').trim();
+  const valueRaw = String($('fValue').value || '').replace(/,/g, '').trim();
+  const currency = $('fCurrency').value;
+  const rateRaw = currency === 'INR' ? '1' : String($('fRate').value || '').replace(/,/g, '').trim();
+  const remarks = String($('fRemarks').value || '').trim();
+
+  const qty = parseFloat(qtyRaw);
+  const value = parseFloat(valueRaw);
+  const rate = parseFloat(rateRaw);
+
+  // Explicit, itemized validation so users know exactly what's missing
+  const missing = [];
+  if(!brand) missing.push('Brand');
+  if(!model) missing.push('Model');
+  if(!qty || qty < 1) missing.push('Qty');
+  if(!value || value <= 0) missing.push('Unit Value');
+  if(currency !== 'INR' && (!rate || rate <= 0)) missing.push('Exchange Rate');
+  if(missing.length){
+    showMessage('Please fill: ' + missing.join(', '), true);
+    return;
+  }
+
+  if(editingId){
+    const editId = editingId; // snapshot in case async listener changes requests[]
+    const existing = requests.find(x => x.id === editId);
+    if(!existing){
+      showMessage('Could not find the entry being edited — please reload the page.', true);
+      cancelEdit();
+      return;
+    }
+    const updated = Object.assign({}, existing, {
+      brand, model, qty, value, currency, rate, remarks,
+      lineFC: qty * value,
+      inrValue: qty * value * rate,
+      updatedAt: Date.now(),
+    });
+    try {
+      await db.collection(COLLECTION).doc(editId).set(updated);
+      cancelEdit();
+      showMessage('Updated: ' + brand + ' — ' + model, false);
+    } catch(e) {
+      console.error('Update failed:', e);
+      showMessage('Update failed: ' + (e.message || 'unknown error') + '. Check Firestore rules allow write.', true);
+    }
+    return;
+  }
+
+  // Unique ref built from full timestamp — never collides on rapid adds
+  const refCompact = todayISO().slice(2).replace(/-/g,'');
+  const refUnique = Date.now().toString(36); // full base-36 timestamp, not last 4 digits
+  const ref = 'PO' + refCompact + '-' + refUnique.slice(-5).toUpperCase();
+
+  // Duplicate guard: if an identical entry was just added within the last 15 seconds,
+  // reject with a clear message. Signals mobile autofill re-submitting the previous entry.
+  const now = Date.now();
+  const dup = requests.find(r =>
+    r.brand === brand && r.model === model && r.qty === qty && r.value === value
+    && r.currency === currency && (now - (r.createdAt || 0)) < 15000
+  );
+  if(dup){
+    showMessage('This looks like the entry you just added (' + brand + ' — ' + model + '). If you really want to add it again, wait 15 seconds.', true);
+    return;
+  }
+
+  const entry = {
+    id: 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2,7),
+    ref: ref,
+    date: todayISO(),
+    brand, model, qty, value, currency, rate, remarks,
+    lineFC: qty * value,
+    inrValue: qty * value * rate,
+    requestedBy: ROLES[currentRoleKey].name,
+    status: 'pending',
+    approvedBy: null,
+    approvedAt: null,
+    createdAt: Date.now(),
+  };
+  const ok = await saveRequest(entry);
+  if(ok){
+    showMessage('SAVED TO FIRESTORE: ' + brand + ' — ' + model + '. Refresh the page to verify it is retained.', false);
+    // Clear the form only after Firestore confirms the write.
+    resetForm();
+    setTimeout(showAddAnotherBtn, 100);
+  } else {
+    // Keep all entered values visible so they are not lost when Firestore rejects the write.
+    showMessage('SAVE FAILED — your entered values were NOT cleared. Check the exact error above.', true);
+  }
+}
+
+let addAnotherTimer = null;
+let addAnotherJustShown = false;
+function showAddAnotherBtn(){
+  const btn = $('addAnotherBtn');
+  if(!btn) return;
+  btn.style.display = 'inline-block';
+  addAnotherJustShown = true;
+  // Ignore any focus events for the next 500ms — mobile blur/refocus cascade
+  setTimeout(() => { addAnotherJustShown = false; }, 500);
+  // Scroll button into view so user sees it even if keyboard dismissal shifted viewport
+  setTimeout(() => btn.scrollIntoView({behavior:'smooth', block:'nearest'}), 150);
+  if(addAnotherTimer) clearTimeout(addAnotherTimer);
+  addAnotherTimer = setTimeout(hideAddAnotherBtn, 30000);
+}
+function hideAddAnotherBtn(){
+  const btn = $('addAnotherBtn');
+  if(btn) btn.style.display = 'none';
+  if(addAnotherTimer){ clearTimeout(addAnotherTimer); addAnotherTimer = null; }
+}
+// Hide Add Another only when user actually TYPES in a field (not just focuses)
+['fBrand','fModel','fQty','fValue','fRate','fRemarks'].forEach(id => {
+  const el = $(id);
+  if(el) el.addEventListener('input', () => {
+    if(!addAnotherJustShown) hideAddAnotherBtn();
+  });
+});
+$('addAnotherBtn').addEventListener('click', () => {
+  hideAddAnotherBtn();
+  $('fBrand').focus();
+  $('addPanel').scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+function startEdit(id){
+  const r = requests.find(x => x.id === id);
+  if(!r) return;
+  editingId = id;
+  $('fBrand').value = r.brand;
+  $('fModel').value = r.model;
+  $('fQty').value = r.qty;
+  $('fValue').value = r.value;
+  $('fCurrency').value = r.currency;
+  syncRateField();
+  if(r.currency !== 'INR') $('fRate').value = r.rate;
+  $('fRemarks').value = r.remarks || '';
+  updateLiveCalc();
+  $('addBtn').textContent = 'Update Entry';
+  $('addBtn').classList.add('editing');
+  $('cancelEdit').style.display = 'inline';
+  $('addPanel').scrollIntoView({behavior:'smooth', block:'start'});
+}
+function cancelEdit(){
+  editingId = null;
+  $('addBtn').textContent = 'Add to Register';
+  $('addBtn').classList.remove('editing');
+  $('cancelEdit').style.display = 'none';
+  resetForm();
+}
+$('cancelEdit').onclick = cancelEdit;
+
+async function actOnRequest(id, action){
+  const r = requests.find(x => x.id === id);
+  if(!r) return;
+  const updated = Object.assign({}, r, {
+    status: action,
+    approvedBy: ROLES[currentRoleKey].name,
+    approvedAt: new Date().toISOString(),
+  });
+  await saveRequest(updated);
+}
+
+let pendingDeleteId = null;
+async function deleteRequest(id){
+  const r = requests.find(x => x.id === id);
+  if(!r){ showMessage('Could not find that entry — please reload.', true); return; }
+  if(pendingDeleteId !== id){
+    pendingDeleteId = id;
+    render();
+    showMessage('Click Confirm to remove ' + r.brand + ' — ' + r.model + '.', false);
+    return;
+  }
+  pendingDeleteId = null;
+  const ok = await deleteRequestDoc(id);
+  if(ok) showMessage('Removed ' + r.brand + ' — ' + r.model + '.', false);
+}
+function cancelDelete(){
+  pendingDeleteId = null;
+  render();
+}
+
+// ---------- filtering / rendering ----------
+function currentFilteredRequests(){
+  let list = requests.slice();
+  if(filterMode === 'today'){
+    list = list.filter(r => r.date === todayISO());
+  } else if(filterMode === 'pending'){
+    list = list.filter(r => r.status === 'pending');
+  } else if(filterMode === 'date' && filterDate){
+    list = list.filter(r => r.date === filterDate);
+  }
+  if(requesterFilter !== 'all'){
+    list = list.filter(r => r.requestedBy === requesterFilter);
+  }
+  return list;
+}
+
+function render(){
+  if(!currentRoleKey) return;
+  renderSummary();
+  renderList();
+  renderBackupBanner();
+}
+
+function renderSummary(){
+  const today = requests.filter(r => r.date === todayISO());
+  const pending = requests.filter(r => r.status === 'pending');
+  const totalUSD = today.filter(r=>r.currency==='USD').reduce((s,r)=>s+Number(r.lineFC||0),0);
+  const totalEUR = today.filter(r=>r.currency==='EUR').reduce((s,r)=>s+Number(r.lineFC||0),0);
+  const totalINR = today.reduce((s,r)=>s+Number(r.inrValue||0),0);
+
+  const cards = [
+    { n: today.length, l: "Today's Requests" },
+    { n: pending.length, l: 'Pending Approval' },
+    { n: fmtFC(totalUSD,'USD'), l: 'Total Value — USD' },
+    { n: fmtFC(totalEUR,'EUR'), l: 'Total Value — EUR' },
+    { n: fmtINR(totalINR), l: 'Total Order Value — INR' },
+  ];
+  $('summary').innerHTML = cards.map(c =>
+    '<div class="sumCard"><div class="n">'+c.n+'</div><div class="l">'+c.l+'</div></div>'
+  ).join('');
+}
+
+function renderList(){
+  const listEl = $('list');
+  const items = currentFilteredRequests();
+
+  if(items.length === 0){
+    listEl.innerHTML = '<div class="empty">No entries in the register for this view.'
+      + (ROLES[currentRoleKey].type==='requester' ? ' Add one above.' : ' Nothing pending approval right now.')
+      + '</div>';
+    return;
+  }
+
+  const groups = {};
+  items.forEach(r => { (groups[r.date] = groups[r.date] || []).push(r); });
+  const dates = Object.keys(groups).sort().reverse();
+
+  const isApprover = ROLES[currentRoleKey].type === 'approver';
+  const isRequester = ROLES[currentRoleKey].type === 'requester';
+  const colspan = 10;
+
+  let rowsHtml = dates.map(date => {
+    const dayUSD = groups[date].filter(r=>r.currency==='USD').reduce((s,r)=>s+Number(r.lineFC||0),0);
+    const dayEUR = groups[date].filter(r=>r.currency==='EUR').reduce((s,r)=>s+Number(r.lineFC||0),0);
+    const dayINR = groups[date].reduce((s,r)=>s+Number(r.inrValue||0),0);
+
+    const bodyRows = groups[date].map(r => {
+      const badge = '<span class="badge '+r.status+'">'+r.status+'</span>';
+      let actions = '';
+      if(isApprover && r.status === 'pending'){
+        actions = '<button class="actBtn approve" onclick="actOnRequest(\''+r.id+'\',\'approved\')">Approve</button>'
+          + '<button class="actBtn reject" onclick="actOnRequest(\''+r.id+'\',\'rejected\')">Reject</button>';
+      } else if(isRequester && r.status === 'pending'){
+        if(pendingDeleteId === r.id){
+          actions = '<span style="font-size:11px;color:var(--red);margin-right:6px;">Remove this?</span>'
+            + '<button class="actBtn reject" onclick="deleteRequest(\''+r.id+'\')">Confirm</button>'
+            + '<button class="actBtn del" onclick="cancelDelete()">Cancel</button>';
+        } else {
+          actions = '<button class="actBtn del" onclick="startEdit(\''+r.id+'\')">Edit</button>'
+            + '<button class="actBtn del" onclick="deleteRequest(\''+r.id+'\')">Remove</button>';
+        }
+      }
+      const approvedNote = r.status !== 'pending' ? ' · '+r.status+' by '+r.approvedBy : '';
+      const remarksHtml = r.remarks ? '<span class="remarks">"'+escapeHtml(r.remarks)+'"</span>' : '';
+
+      return '<tr class="dataRow">'
+        + '<td class="ref">'+r.ref+'</td>'
+        + '<td>'+escapeHtml(r.brand)+'</td>'
+        + '<td>'+escapeHtml(r.model)+remarksHtml+'</td>'
+        + '<td class="num">'+r.qty+'</td>'
+        + '<td class="num">'+fmtFC(r.value, r.currency)+'</td>'
+        + '<td>'+r.currency+'</td>'
+        + '<td class="num">'+(r.currency==='INR' ? '—' : r.rate)+'</td>'
+        + '<td class="num">'+fmtFC(r.lineFC, r.currency)+'</td>'
+        + '<td class="num">'+fmtINR(r.inrValue)+'</td>'
+        + '<td>'+badge+'<div class="remarks">'+r.requestedBy+approvedNote+'</div></td>'
+        + '<td>'+actions+'</td>'
+        + '</tr>';
+    }).join('');
+
+    const fcParts = [];
+    if(dayUSD) fcParts.push(fmtFC(dayUSD,'USD'));
+    if(dayEUR) fcParts.push(fmtFC(dayEUR,'EUR'));
+    const fcTotalsText = fcParts.length ? fcParts.join(' + ') : '—';
+
+    return '<tr class="dateRow"><td colspan="'+colspan+'">'+fmtDate(date)+'</td></tr>'
+      + bodyRows
+      + '<tr class="totalsRow">'
+        + '<td class="label" colspan="6">Day Total</td>'
+        + '<td class="num">'+fcTotalsText+'</td>'
+        + '<td class="num">'+fmtINR(dayINR)+'</td>'
+        + '<td colspan="2"></td>'
+      + '</tr>';
+  }).join('');
+
+  listEl.innerHTML = '<div class="tableScroll"><table class="register">'
+    + '<thead><tr>'
+    + '<th>Ref No.</th><th>Brand</th><th>Model</th><th class="num">Qty</th><th class="num">Unit Value</th>'
+    + '<th>Cur.</th><th class="num">Rate (₹)</th><th class="num">Line Total (FC)</th><th class="num">Line Total (INR)</th>'
+    + '<th>Status</th><th>Action</th>'
+    + '</tr></thead>'
+    + '<tbody>' + rowsHtml + '</tbody>'
+    + '</table></div>';
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.onclick = () => {
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    filterMode = chip.dataset.filter;
+    if(filterMode !== 'all') $('datePick').value = '';
+    render();
+  };
+});
+$('datePick').onchange = (e) => {
+  if(e.target.value){
+    filterMode = 'date';
+    filterDate = e.target.value;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    render();
+  }
+};
+
+function exportToExcel(){
+  const items = currentFilteredRequests().slice().sort((a,b) => a.date.localeCompare(b.date) || a.ref.localeCompare(b.ref));
+  if(items.length === 0){
+    showMessage('Nothing to export in the current view.', true);
+    return;
+  }
+  const rows = items.map(r => ({
+    'Date': r.date,
+    'Ref No.': r.ref,
+    'Brand': r.brand,
+    'Model': r.model,
+    'Qty': r.qty,
+    'Unit Value': r.value,
+    'Currency': r.currency,
+    'Exchange Rate (₹)': r.currency === 'INR' ? '' : r.rate,
+    'Line Total (FC)': Number(r.lineFC.toFixed(2)),
+    'Line Total (INR)': Math.round(r.inrValue),
+    'Status': r.status,
+    'Requested By': r.requestedBy,
+    'Approved By': r.approvedBy || '',
+    'Remarks': r.remarks || '',
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    {wch:11},{wch:12},{wch:14},{wch:20},{wch:6},{wch:12},{wch:9},
+    {wch:16},{wch:15},{wch:15},{wch:10},{wch:14},{wch:14},{wch:24}
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Purchase Register');
+  const stamp = todayISO();
+  const label = filterMode === 'today' ? 'Today' : filterMode === 'pending' ? 'Pending' : filterMode === 'date' ? filterDate : 'AllDates';
+  XLSX.writeFile(wb, 'KEI_Purchase_Register_' + label + '_' + stamp + '.xlsx');
+}
+$('exportBtn').onclick = exportToExcel;
+$('requesterFilter').onchange = (e) => { requesterFilter = e.target.value; render(); };
+$('addBtn').onclick = addRequest;
+
+$('todayLabel').innerHTML = 'Register Date · <b>' + fmtDate(todayISO()) + '</b>';
+buildRoleGate();
+startListening();
+</script>
+</body>
+</html>

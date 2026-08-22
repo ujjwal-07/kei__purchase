@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KEI Purchase Department — Purchase Order Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,600;0,8..60,700;0,8..60,800;1,8..60,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --ink: #1C1F26;
+    --paper: #F3F3F1;
+    --panel: #FFFFFF;
+    --line: #CBCFD6;
+    --line-strong: #9AA0AC;
+    --muted: #5B6270;
+    --navy: #1F2D3D;
+    --navy-deep: #141D28;
+    --brass: #8A6A2F;
+    --brass-bg: #F3EBD9;
+    --brass-border: #D2BA85;
+    --green: #1F6B44;
+    --green-bg: #E3F0E7;
+    --green-border: #A3D4B6;
+    --red: #9E3226;
+    --red-bg: #F6E4E1;
+    --red-border: #E8B4AE;
+    --blue: #1C4E80;
+    --shadow-sm: 0 1px 3px rgba(20, 29, 40, 0.08);
+    --shadow-lg: 0 10px 25px rgba(20, 29, 40, 0.18);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    font-size: 13.5px;
+    line-height: 1.45;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 26px 20px 80px; }
+
+  /* Letterhead */
+  .letterhead {
+    border-bottom: 2px solid var(--navy);
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .masthead {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--navy-deep);
+    letter-spacing: -0.02em;
+  }
+  .masthead .doc {
+    display: block;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 3px;
+  }
+  .today { font-size: 12px; color: var(--muted); text-align: right; }
+  .today b { color: var(--ink); font-weight: 600; }
+  .connStatus {
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .connStatus.ok { color: var(--green); }
+  .connStatus.bad { color: var(--red); }
+  .connDot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  /* Role Bar */
+  .roleBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 10px 16px;
+    margin-bottom: 18px;
+    font-size: 13px;
+    box-shadow: var(--shadow-sm);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .roleBar .who { display: flex; align-items: center; gap: 8px; }
+  .roleBar .who b { font-weight: 700; color: var(--navy-deep); }
+  .roleBar .tag {
+    background: var(--navy);
+    color: #fff;
+    padding: 3px 9px;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-radius: 2px;
+  }
+  .actionLink {
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+  .actionLink:hover { color: var(--navy-deep); }
+  .actionLink.danger:hover { color: var(--red); }
+
+  /* Summary Cards */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .sumCard { background: var(--panel); padding: 14px 16px; }
+  .sumCard .n {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--navy-deep);
+    line-height: 1.3;
+    word-break: break-word;
+  }
+  .sumCard .l {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 4px;
+  }
+
+  /* Panels & Forms */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 20px 22px;
+    margin-bottom: 22px;
+    box-shadow: var(--shadow-sm);
+  }
+  .panel h3 {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 16px;
+    margin: 0 0 4px;
+    color: var(--navy-deep);
+    font-weight: 700;
+  }
+  .panel .hint { font-size: 12px; color: var(--muted); margin: 0 0 16px; }
+
+  .editModeHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--brass-bg);
+    border: 1px solid var(--brass-border);
+    padding: 8px 12px;
+    margin-bottom: 14px;
+    font-size: 12px;
+    color: var(--brass);
+    font-weight: 700;
+  }
+
+  .formGrid { display: flex; flex-wrap: wrap; gap: 12px; }
+  .field { flex: 1 1 150px; }
+  .field.narrow { flex: 0 1 100px; }
+  .field.wide { flex: 2 1 240px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .field label small { text-transform: none; font-style: italic; font-weight: 400; }
+  .field input, .field select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: 0;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .field input:focus, .field select:focus {
+    outline: 2px solid var(--navy);
+    background: #fff;
+  }
+
+  .formFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--line-strong);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .liveCalc { font-size: 13px; color: var(--muted); }
+  .liveCalc b {
+    color: var(--navy-deep);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .primaryBtn {
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    min-width: 180px;
+    box-shadow: 0 2px 4px rgba(20,29,40,0.15);
+    transition: background 0.15s;
+  }
+  .primaryBtn:hover { background: var(--navy-deep); }
+  .primaryBtn.editing { background: var(--brass); }
+  .primaryBtn.editing:hover { background: #6E5525; }
+
+  .addAnotherBtn {
+    background: var(--green);
+    color: #fff;
+    border: none;
+    padding: 12px 20px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    animation: pulseGreen 2.5s infinite;
+  }
+  @keyframes pulseGreen {
+    0%, 100% { box-shadow: 0 2px 4px rgba(31, 107, 68, 0.2); }
+    50% { box-shadow: 0 2px 14px rgba(31, 107, 68, 0.45); }
+  }
+
+  /* Filters */
+  .filterRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .chip {
+    border: 1px solid var(--line-strong);
+    background: var(--panel);
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .chip.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .filterInput {
+    padding: 7px 10px;
+    border: 1px solid var(--line-strong);
+    font-size: 12.5px;
+    background: var(--panel);
+    color: var(--ink);
+  }
+  .exportBtn {
+    margin-left: auto;
+    border: 1px solid var(--navy);
+    background: var(--panel);
+    color: var(--navy);
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .exportBtn:hover { background: var(--navy); color: #fff; }
+
+  /* Table */
+  .tableScroll { overflow-x: auto; border: 1px solid var(--line); background: var(--panel); }
+  table.register { width: 100%; border-collapse: collapse; min-width: 980px; }
+  table.register thead th {
+    background: var(--navy);
+    color: #EDEFF3;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 10px 12px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  table.register thead th.num { text-align: right; }
+  table.register tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  table.register tbody td.num { text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; }
+  table.register tbody tr.dataRow:hover { background: #FBFBFA; }
+
+  .dateRow td {
+    background: #EBECE8;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--navy-deep);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 9px 12px;
+    border-top: 2px solid var(--line-strong);
+    border-bottom: 1px solid var(--line);
+  }
+  .totalsRow td {
+    background: #E6E7E3;
+    font-weight: 700;
+    font-size: 12px;
+    border-bottom: 2px solid var(--line-strong);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .totalsRow td.label { font-family: 'Inter', sans-serif; text-transform: uppercase; letter-spacing: 0.05em; font-size: 11px; color: var(--muted); }
+
+  .ref { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+  .remarks { display: block; font-size: 11.5px; color: var(--muted); font-style: italic; margin-top: 3px; }
+  .auditNote { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  .badge { display: inline-block; padding: 3px 9px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+  .badge.pending { background: var(--brass-bg); color: var(--brass); border: 1px solid var(--brass-border); }
+  .badge.approved { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .badge.rejected { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+  .editedTag { display: inline-block; font-size: 9.5px; font-weight: 600; background: #EBF4FC; color: var(--blue); border: 1px solid #B8D6F5; padding: 1px 5px; margin-left: 4px; text-transform: uppercase; }
+
+  .actBtn {
+    border: 1px solid var(--line-strong);
+    background: var(--panel);
+    padding: 4px 9px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-right: 4px;
+    margin-bottom: 2px;
+  }
+  .actBtn.approve { color: var(--green); border-color: var(--green); }
+  .actBtn.approve:hover { background: var(--green); color: #fff; }
+  .actBtn.reject { color: var(--red); border-color: var(--red); }
+  .actBtn.reject:hover { background: var(--red); color: #fff; }
+  .actBtn.edit { color: var(--navy); border-color: var(--navy); }
+  .actBtn.edit:hover { background: var(--navy); color: #fff; }
+  .actBtn.del { color: var(--muted); }
+  .actBtn.del:hover { background: #E8EAED; }
+  .actBtn.confirmDel { color: #fff; background: var(--red); border-color: var(--red); }
+
+  /* Modal */
+  .modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 29, 40, 0.65);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  .modalCard {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-lg);
+    max-width: 480px;
+    width: 100%;
+    padding: 32px 28px;
+  }
+  .modalCard h2 { font-family: 'Source Serif 4', Georgia, serif; font-size: 22px; margin: 0 0 6px; color: var(--navy-deep); text-align: center; }
+  .modalCard p { color: var(--muted); font-size: 13px; margin: 0 0 24px; text-align: center; }
+  .roleSelectGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .profileCardBtn {
+    border: 1px solid var(--line-strong);
+    background: var(--paper);
+    padding: 14px 12px;
+    cursor: pointer;
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .profileCardBtn.selected { border-color: var(--navy); background: var(--navy); color: #fff; }
+  .profileCardBtn.selected small { color: #CBCFD6; }
+  .profileCardBtn small { display: block; font-weight: 600; color: var(--muted); font-size: 11px; margin-top: 4px; text-transform: uppercase; }
+
+  .toast { padding: 12px 18px; margin-bottom: 16px; font-size: 13px; font-weight: 600; }
+  .toast.success { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .toast.error { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+
+  .backupBanner {
+    background: var(--brass-bg);
+    border: 1px solid var(--brass-border);
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .backupBanner .bbText { color: var(--brass); font-size: 13.5px; font-weight: 700; }
+  .backupBanner .bbText small { display: block; font-weight: 500; color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .backupBtn { background: var(--brass); color: #fff; border: none; padding: 9px 18px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .backupSkip { background: transparent; color: var(--brass); border: 1px solid var(--brass); padding: 9px 14px; font-size: 12px; font-weight: 600; cursor: pointer; }
+
+  @media (max-width: 860px) {
+    .summary { grid-template-columns: repeat(2, 1fr); }
+    .roleSelectGrid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="letterhead">
+    <div class="masthead">KEI Purchase Department<span class="doc">Purchase Order Register</span></div>
+    <div class="today">
+      <div id="todayLabel"></div>
+      <div class="connStatus ok" id="connStatus">
+        <span class="connDot"></span> Connected (MongoDB Atlas)
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" style="display:none;"></div>
+
+  <!-- Role / Login Modal -->
+  <div id="loginModal" class="modalOverlay">
+    <div class="modalCard">
+      <h2>Who's working?</h2>
+      <p>Select your profile and enter password to access the Purchase Order Register.</p>
+
+      <div class="roleSelectGrid" id="roleGrid"></div>
+
+      <form id="loginForm" style="margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line);">
+        <label style="display:block; font-size:11px; font-weight:700; color:var(--muted); margin-bottom:6px; text-transform:uppercase;" id="loginLabel">
+          Password for Satish
+        </label>
+        <div style="position:relative; margin-bottom:16px;">
+          <input type="password" id="loginPassword" placeholder="Enter password" style="width:100%; padding:11px 40px 11px 12px; border:1px solid var(--line-strong); background:var(--paper);" required>
+          <button type="button" id="togglePwBtn" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); font-size:12px; cursor:pointer;">Show</button>
+        </div>
+        <div id="loginError" style="display:none; color:var(--red); font-size:12px; font-weight:600; margin-bottom:12px; padding:6px 10px; background:var(--red-bg); border:1px solid var(--red-border);"></div>
+        <button type="submit" class="primaryBtn" id="loginBtn" style="width:100%;">Sign in</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div id="changePwModal" class="modalOverlay" style="display:none;">
+    <div class="modalCard">
+      <h2>Change Password</h2>
+      <p id="changePwSub">Update your password</p>
+      <form id="changePwForm">
+        <div class="field" style="margin-bottom:14px;">
+          <label>Current Password</label>
+          <input type="password" id="cpCurrent" required>
+        </div>
+        <div class="field" style="margin-bottom:14px;">
+          <label>New Password</label>
+          <input type="password" id="cpNew" required>
+        </div>
+        <div class="field" style="margin-bottom:16px;">
+          <label>Confirm New Password</label>
+          <input type="password" id="cpConfirm" required>
+        </div>
+        <div id="changePwError" style="display:none; color:var(--red); font-size:12px; font-weight:600; margin-bottom:12px; padding:6px 10px; background:var(--red-bg);"></div>
+        <div style="display:flex; gap:10px;">
+          <button type="button" class="primaryBtn" id="cancelCpBtn" style="background:#fff; color:var(--ink); border:1px solid var(--line-strong);">Cancel</button>
+          <button type="submit" class="primaryBtn" style="flex:1;">Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main App View -->
+  <div id="app" style="display:none;">
+    <div class="roleBar">
+      <div class="who">Signed in as <b id="whoName"></b><span class="tag" id="whoTag"></span></div>
+      <div style="display:flex; gap:14px; align-items:center;">
+        <button type="button" class="actionLink" id="openCpBtn">Change Password</button>
+        <span style="color:var(--line-strong);">|</span>
+        <button type="button" class="actionLink danger" id="switchBtn">Switch / Logout</button>
+      </div>
+    </div>
+
+    <div class="summary" id="summary"></div>
+
+    <div class="panel" id="addPanel">
+      <div id="editModeHeader" class="editModeHeader" style="display:none;">
+        <span id="editModeText">Editing Request</span>
+        <button type="button" class="actionLink" id="cancelEditLink" style="color:var(--brass); font-weight:700;">Cancel Edit</button>
+      </div>
+      <h3 id="panelTitle">New Purchase Request</h3>
+      <p class="hint" id="panelHint">Enter value in USD, EUR or INR. For USD/EUR, specify today's exchange rate — INR is calculated automatically.</p>
+
+      <form id="reqForm">
+        <div class="formGrid">
+          <div class="field wide"><label>Brand</label>
+            <input id="fBrand" type="text" list="brandOptions" placeholder="Pick or type a brand" required autocomplete="off">
+            <datalist id="brandOptions">
+              <option value="ELAC"><option value="Fyne Audio"><option value="Primare"><option value="Advance Paris">
+              <option value="ToneWinner"><option value="Totem Acoustic"><option value="Origin Acoustics"><option value="Adept Audio">
+              <option value="Fonestar"><option value="Ecler"><option value="Inakustik"><option value="Kasper"><option value="Dune HD"><option value="JVC">
+            </datalist>
+          </div>
+          <div class="field wide"><label>Model</label><input id="fModel" type="text" placeholder="e.g. Debut B6.2" required autocomplete="off"></div>
+          <div class="field narrow"><label>Qty</label><input id="fQty" type="number" min="1" placeholder="0" required autocomplete="off"></div>
+          <div class="field"><label>Unit Value</label><input id="fValue" type="number" min="0.01" step="0.01" placeholder="0.00" required autocomplete="off"></div>
+          <div class="field narrow"><label>Currency</label>
+            <select id="fCurrency">
+              <option value="USD">USD</option>
+              <option value="INR">INR</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </div>
+          <div class="field" id="rateField"><label>Exchange Rate <small>(₹ per unit)</small></label><input id="fRate" type="number" min="0" step="0.01" placeholder="e.g. 87.50" autocomplete="off"></div>
+          <div class="field wide"><label>Remarks <small>(optional)</small></label><input id="fRemarks" type="text" placeholder="e.g. urgent, backorder, project name" autocomplete="off"></div>
+        </div>
+        <div class="formFooter">
+          <div class="liveCalc">Line Total (INR): <b id="liveCalc">₹0</b></div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <button type="button" class="addAnotherBtn" id="addAnotherBtn" style="display:none;">+ Add Another</button>
+            <button type="submit" class="primaryBtn" id="submitBtn">Add to Register</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div id="backupBanner" class="backupBanner" style="display:none;">
+      <div class="bbText">Weekly backup due<small id="bbSub">Download all records as Excel and keep the file safe.</small></div>
+      <div style="display:flex; gap:8px;">
+        <button class="backupSkip" id="skipBackupBtn">Remind next week</button>
+        <button class="backupBtn" id="runBackupBtn">Download backup now</button>
+      </div>
+    </div>
+
+    <div class="filterRow">
+      <button class="chip active" data-filter="all">All Dates</button>
+      <button class="chip" data-filter="today">Today</button>
+      <button class="chip" data-filter="pending">Pending Only</button>
+      <button class="chip" data-filter="approved">Approved</button>
+      <input type="date" class="filterInput" id="filterDate">
+      <select class="filterInput" id="requesterFilter">
+        <option value="all">Requested By: All</option>
+        <option value="Satish">Requested By: Satish</option>
+        <option value="Archana">Requested By: Archana</option>
+      </select>
+      <input type="text" class="filterInput" id="searchFilter" placeholder="Search brand, model, ref…">
+      <button class="exportBtn" id="exportBtn">Export to Excel</button>
+    </div>
+
+    <div id="list"><div style="text-align:center; padding:30px; color:var(--muted);">Loading register…</div></div>
+  </div>
+
+</div>
+
+<script>
+const PROFILES = {
+  satish: { key:'satish', name:'Satish', role:'requester', label:'Requester' },
+  archana: { key:'archana', name:'Archana', role:'requester', label:'Requester' },
+  soham: { key:'soham', name:'Soham Chawla', role:'approver', label:'Approver' },
+  sanjay: { key:'sanjay', name:'Sanjay Chawla', role:'approver', label:'Approver' },
+};
+const CUR_SYMBOL = { USD:'$', EUR:'€', INR:'₹' };
+
+let currentUser = null;
+let requests = [];
+let backupMeta = null;
+let selectedProfileKey = 'satish';
+let editingId = null;
+let filterMode = 'all';
+let filterDateVal = '';
+let requesterFilterVal = 'all';
+let searchVal = '';
+let pendingDeleteId = null;
+
+const $ = id => document.getElementById(id);
+
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-IN', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+}
+function fmtINR(n) { return '₹' + Math.round(Number(n||0)).toLocaleString('en-IN'); }
+function fmtFC(n, cur) {
+  const loc = cur === 'INR' ? 'en-IN' : 'en-US';
+  return (CUR_SYMBOL[cur]||'') + Number(n||0).toLocaleString(loc, { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+
+function showToast(msg, isError) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (isError ? 'error' : 'success');
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 4000);
+}
+
+// Build Role Grid
+function renderRoleGrid() {
+  const grid = $('roleGrid');
+  grid.innerHTML = Object.values(PROFILES).map(p => `
+    <button type="button" class="profileCardBtn ${p.key === selectedProfileKey ? 'selected' : ''}" onclick="selectProfile('${p.key}')">
+      ${p.name}
+      <small>${p.label}</small>
+    </button>
+  `).join('');
+  $('loginLabel').textContent = `Password for ${PROFILES[selectedProfileKey].name}`;
+  $('loginBtn').textContent = `Sign in as ${PROFILES[selectedProfileKey].name}`;
+}
+
+window.selectProfile = function(key) {
+  selectedProfileKey = key;
+  $('loginPassword').value = '';
+  $('loginError').style.display = 'none';
+  renderRoleGrid();
+};
+
+$('togglePwBtn').onclick = () => {
+  const pw = $('loginPassword');
+  pw.type = pw.type === 'password' ? 'text' : 'password';
+  $('togglePwBtn').textContent = pw.type === 'password' ? 'Show' : 'Hide';
+};
+
+// Login Form
+$('loginForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const password = $('loginPassword').value;
+  $('loginError').style.display = 'none';
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: selectedProfileKey, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+
+    currentUser = data.user;
+    $('loginModal').style.display = 'none';
+    $('app').style.display = 'block';
+    $('whoName').textContent = currentUser.name;
+    $('whoTag').textContent = currentUser.label;
+    $('whoTag').className = 'tag ' + currentUser.role;
+
+    if (currentUser.role === 'approver') {
+      $('addPanel').style.display = 'none';
+    } else {
+      $('addPanel').style.display = 'block';
+    }
+
+    showToast(`Welcome, ${currentUser.name}!`, false);
+    loadData();
+  } catch (err) {
+    $('loginError').textContent = err.message;
+    $('loginError').style.display = 'block';
+  }
+};
+
+$('switchBtn').onclick = () => {
+  currentUser = null;
+  editingId = null;
+  $('app').style.display = 'none';
+  $('loginPassword').value = '';
+  $('loginModal').style.display = 'flex';
+};
+
+// Change Password
+$('openCpBtn').onclick = () => {
+  $('changePwSub').textContent = `Update password for ${currentUser.name}`;
+  $('cpCurrent').value = '';
+  $('cpNew').value = '';
+  $('cpConfirm').value = '';
+  $('changePwError').style.display = 'none';
+  $('changePwModal').style.display = 'flex';
+};
+$('cancelCpBtn').onclick = () => { $('changePwModal').style.display = 'none'; };
+
+$('changePwForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const currentPassword = $('cpCurrent').value;
+  const newPassword = $('cpNew').value;
+  const confirm = $('cpConfirm').value;
+
+  if (newPassword !== confirm) {
+    $('changePwError').textContent = 'New passwords do not match';
+    $('changePwError').style.display = 'block';
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/auth/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: currentUser.username, currentPassword, newPassword })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to update password');
+
+    $('changePwModal').style.display = 'none';
+    showToast('Password updated successfully in MongoDB Atlas!', false);
+  } catch (err) {
+    $('changePwError').textContent = err.message;
+    $('changePwError').style.display = 'block';
+  }
+};
+
+// Form calculations
+function syncRate() {
+  const isINR = $('fCurrency').value === 'INR';
+  $('fRate').disabled = isINR;
+  $('rateField').style.opacity = isINR ? '0.5' : '1';
+  if (isINR) $('fRate').value = '1';
+  else if ($('fRate').value === '1') $('fRate').value = '';
+  updateCalc();
+}
+function updateCalc() {
+  const q = parseFloat($('fQty').value) || 0;
+  const v = parseFloat($('fValue').value) || 0;
+  const r = $('fCurrency').value === 'INR' ? 1 : (parseFloat($('fRate').value) || 0);
+  $('liveCalc').textContent = fmtINR(q * v * r);
+}
+['fQty','fValue','fRate'].forEach(id => $(id).addEventListener('input', updateCalc));
+$('fCurrency').addEventListener('change', syncRate);
+
+function resetForm() {
+  ['fBrand','fModel','fQty','fValue','fRate','fRemarks'].forEach(id => $(id).value = '');
+  $('fCurrency').value = 'USD';
+  syncRate();
+  updateCalc();
+}
+
+// Add or Edit Request (Supports Approved entries)
+$('reqForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const brand = $('fBrand').value.trim();
+  const model = $('fModel').value.trim();
+  const qty = parseFloat($('fQty').value) || 0;
+  const value = parseFloat($('fValue').value) || 0;
+  const currency = $('fCurrency').value;
+  const rate = currency === 'INR' ? 1 : (parseFloat($('fRate').value) || 0);
+  const remarks = $('fRemarks').value.trim();
+
+  try {
+    if (editingId) {
+      const res = await fetch(`/api/requests/${editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brand, model, qty, value, currency, rate, remarks, editedBy: currentUser.name })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Update failed');
+
+      showToast(`Updated: ${brand} — ${model}`, false);
+      cancelEdit();
+    } else {
+      const res = await fetch('/api/requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ brand, model, qty, value, currency, rate, remarks, requestedBy: currentUser.name })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save');
+
+      showToast(`Saved to MongoDB Atlas: ${brand} — ${model}`, false);
+      resetForm();
+      $('addAnotherBtn').style.display = 'inline-block';
+    }
+    loadData();
+  } catch (err) {
+    showToast(err.message, true);
+  }
+};
+
+$('addAnotherBtn').onclick = () => {
+  $('addAnotherBtn').style.display = 'none';
+  $('fBrand').focus();
+};
+
+window.startEdit = function(id) {
+  const req = requests.find(r => r.id === id || r._id === id);
+  if (!req) return;
+  editingId = id;
+  $('fBrand').value = req.brand;
+  $('fModel').value = req.model;
+  $('fQty').value = req.qty;
+  $('fValue').value = req.value;
+  $('fCurrency').value = req.currency;
+  syncRate();
+  if (req.currency !== 'INR') $('fRate').value = req.rate;
+  $('fRemarks').value = req.remarks || '';
+  updateCalc();
+
+  $('addPanel').style.display = 'block';
+  $('editModeHeader').style.display = 'flex';
+  $('editModeText').textContent = req.status === 'approved'
+    ? `✏️ Editing Approved Request (${req.ref}) — preserves approval with audit log`
+    : `✏️ Editing Request (${req.ref})`;
+  $('submitBtn').textContent = req.status === 'approved' ? 'Update Approved Entry' : 'Update Entry';
+  $('submitBtn').classList.add('editing');
+  $('addPanel').scrollIntoView({ behavior:'smooth', block:'start' });
+};
+
+function cancelEdit() {
+  editingId = null;
+  $('editModeHeader').style.display = 'none';
+  $('submitBtn').textContent = 'Add to Register';
+  $('submitBtn').classList.remove('editing');
+  if (currentUser && currentUser.role === 'approver') {
+    $('addPanel').style.display = 'none';
+  }
+  resetForm();
+}
+$('cancelEditLink').onclick = cancelEdit;
+
+window.actOnRequest = async function(id, action) {
+  try {
+    const res = await fetch(`/api/requests/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: action, approvedBy: currentUser.name })
+    });
+    if (!res.ok) throw new Error('Status update failed');
+    showToast(`Request marked as ${action}`, false);
+    loadData();
+  } catch (err) {
+    showToast(err.message, true);
+  }
+};
+
+window.deleteReq = async function(id) {
+  if (pendingDeleteId !== id) {
+    pendingDeleteId = id;
+    renderList();
+    return;
+  }
+  pendingDeleteId = null;
+  try {
+    const res = await fetch(`/api/requests/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Delete failed');
+    showToast('Entry removed successfully', false);
+    loadData();
+  } catch (err) {
+    showToast(err.message, true);
+  }
+};
+window.cancelDelete = function() {
+  pendingDeleteId = null;
+  renderList();
+};
+
+// Data loading & rendering
+async function loadData() {
+  try {
+    const [reqRes, metaRes] = await Promise.all([
+      fetch('/api/requests'),
+      fetch('/api/meta')
+    ]);
+    if (reqRes.ok) {
+      const d = await reqRes.json();
+      requests = d.requests || [];
+      $('connStatus').className = 'connStatus ok';
+    }
+    if (metaRes.ok) {
+      const md = await metaRes.json();
+      backupMeta = md.meta;
+    }
+    render();
+  } catch (err) {
+    console.error(err);
+    $('connStatus').className = 'connStatus bad';
+  }
+}
+
+function render() {
+  renderSummary();
+  renderList();
+  renderBackup();
+}
+
+function renderSummary() {
+  const today = requests.filter(r => r.date === todayISO());
+  const pending = requests.filter(r => r.status === 'pending');
+  const usd = today.filter(r => r.currency === 'USD').reduce((s,r) => s + Number(r.lineFC||0), 0);
+  const eur = today.filter(r => r.currency === 'EUR').reduce((s,r) => s + Number(r.lineFC||0), 0);
+  const inr = today.reduce((s,r) => s + Number(r.inrValue||0), 0);
+
+  $('summary').innerHTML = [
+    { n: today.length, l: "Today's Requests" },
+    { n: pending.length, l: 'Pending Approval' },
+    { n: fmtFC(usd, 'USD'), l: 'Total Value — USD' },
+    { n: fmtFC(eur, 'EUR'), l: 'Total Value — EUR' },
+    { n: fmtINR(inr), l: 'Total Order Value — INR' },
+  ].map(c => `<div class="sumCard"><div class="n">${c.n}</div><div class="l">${c.l}</div></div>`).join('');
+}
+
+function getFiltered() {
+  let list = [...requests];
+  const t = todayISO();
+  if (filterMode === 'today') list = list.filter(r => r.date === t);
+  else if (filterMode === 'pending') list = list.filter(r => r.status === 'pending');
+  else if (filterMode === 'approved') list = list.filter(r => r.status === 'approved');
+  else if (filterMode === 'date' && filterDateVal) list = list.filter(r => r.date === filterDateVal);
+
+  if (requesterFilterVal !== 'all') {
+    list = list.filter(r => r.requestedBy?.toLowerCase() === requesterFilterVal.toLowerCase());
+  }
+  if (searchVal) {
+    const q = searchVal.toLowerCase();
+    list = list.filter(r => (r.brand+r.model+r.ref+(r.remarks||'')+r.requestedBy).toLowerCase().includes(q));
+  }
+  return list;
+}
+
+function renderList() {
+  const items = getFiltered();
+  if (!items.length) {
+    $('list').innerHTML = '<div style="text-align:center; padding:48px 16px; border:1px dashed var(--line-strong); background:#fff; color:var(--muted); font-size:14px;">No entries in register for this view.</div>';
+    return;
+  }
+
+  const groups = {};
+  items.forEach(r => { groups[r.date] = groups[r.date] || []; groups[r.date].push(r); });
+  const dates = Object.keys(groups).sort().reverse();
+  const isAppr = currentUser?.role === 'approver';
+
+  let html = dates.map(d => {
+    const dUSD = groups[d].filter(r=>r.currency==='USD').reduce((s,r)=>s+Number(r.lineFC||0),0);
+    const dEUR = groups[d].filter(r=>r.currency==='EUR').reduce((s,r)=>s+Number(r.lineFC||0),0);
+    const dINR = groups[d].reduce((s,r)=>s+Number(r.inrValue||0),0);
+
+    const rows = groups[d].map(r => {
+      const id = r.id || r._id;
+      const isDel = pendingDeleteId === id;
+      let actions = '';
+
+      if (isAppr) {
+        if (r.status === 'pending') {
+          actions += `<button class="actBtn approve" onclick="actOnRequest('${id}','approved')">Approve</button>
+                      <button class="actBtn reject" onclick="actOnRequest('${id}','rejected')">Reject</button>`;
+        }
+        actions += `<button class="actBtn edit" onclick="startEdit('${id}')">Edit</button>`;
+        if (r.status === 'approved') {
+          actions += `<button class="actBtn reject" onclick="actOnRequest('${id}','rejected')">Reject</button>`;
+        }
+        actions += isDel
+          ? `<button class="actBtn confirmDel" onclick="deleteReq('${id}')">Confirm</button><button class="actBtn del" onclick="cancelDelete()">Cancel</button>`
+          : `<button class="actBtn del" onclick="deleteReq('${id}')">Del</button>`;
+      } else {
+        actions += `<button class="actBtn edit" onclick="startEdit('${id}')">Edit</button>`;
+        if (r.status === 'pending') {
+          actions += isDel
+            ? `<button class="actBtn confirmDel" onclick="deleteReq('${id}')">Confirm</button><button class="actBtn del" onclick="cancelDelete()">Cancel</button>`
+            : `<button class="actBtn del" onclick="deleteReq('${id}')">Remove</button>`;
+        }
+      }
+
+      const audit = `Req: ${r.requestedBy}${r.approvedBy ? ' · ' + r.status + ' by ' + r.approvedBy : ''}${r.editedBy ? ' · edit by ' + r.editedBy : ''}`;
+
+      return `<tr class="dataRow">
+        <td class="ref">${r.ref}</td>
+        <td><b>${r.brand}</b></td>
+        <td>${r.model}${r.remarks ? `<span class="remarks">"${r.remarks}"</span>` : ''}</td>
+        <td class="num">${r.qty}</td>
+        <td class="num">${fmtFC(r.value, r.currency)}</td>
+        <td>${r.currency}</td>
+        <td class="num">${r.currency==='INR'?'—':r.rate}</td>
+        <td class="num">${fmtFC(r.lineFC, r.currency)}</td>
+        <td class="num">${fmtINR(r.inrValue)}</td>
+        <td>
+          <span class="badge ${r.status}">${r.status}</span>
+          ${r.isEdited ? '<span class="editedTag">Edited</span>' : ''}
+          <div class="auditNote">${audit}</div>
+        </td>
+        <td style="white-space:nowrap;">${actions}</td>
+      </tr>`;
+    }).join('');
+
+    const fcParts = [];
+    if (dUSD) fcParts.push(fmtFC(dUSD, 'USD'));
+    if (dEUR) fcParts.push(fmtFC(dEUR, 'EUR'));
+
+    return `<tr class="dateRow"><td colspan="11">${fmtDate(d)}</td></tr>
+      ${rows}
+      <tr class="totalsRow">
+        <td class="label" colspan="7">Day Total</td>
+        <td class="num">${fcParts.join(' + ') || '—'}</td>
+        <td class="num">${fmtINR(dINR)}</td>
+        <td colspan="2"></td>
+      </tr>`;
+  }).join('');
+
+  $('list').innerHTML = `<div class="tableScroll"><table class="register">
+    <thead><tr>
+      <th>Ref No.</th><th>Brand</th><th>Model</th><th class="num">Qty</th><th class="num">Unit Value</th>
+      <th>Cur.</th><th class="num">Rate (₹)</th><th class="num">Line Total (FC)</th><th class="num">Line Total (INR)</th>
+      <th>Status</th><th>Action</th>
+    </tr></thead>
+    <tbody>${html}</tbody>
+  </table></div>`;
+}
+
+// Backup logic
+function renderBackup() {
+  if (!backupMeta || !requests.length) { $('backupBanner').style.display = 'none'; return; }
+  const days = (Date.now() - new Date(backupMeta.at).getTime()) / (1000*60*60*24);
+  if (days < 7) { $('backupBanner').style.display = 'none'; return; }
+  $('bbSub').textContent = `It has been ${Math.floor(days)} days since the last backup (by ${backupMeta.by || 'User'}).`;
+  $('backupBanner').style.display = 'flex';
+}
+$('skipBackupBtn').onclick = async () => {
+  await fetch('/api/meta', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:'skipped', by:currentUser?.name }) });
+  loadData();
+  showToast('Reminder snoozed for 7 days', false);
+};
+$('runBackupBtn').onclick = () => {
+  exportExcel(true);
+};
+
+// Filters listeners
+document.querySelectorAll('.chip').forEach(c => {
+  c.onclick = () => {
+    document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    filterMode = c.dataset.filter;
+    if (filterMode !== 'all') $('filterDate').value = '';
+    renderList();
+  };
+});
+$('filterDate').onchange = e => {
+  if (e.target.value) {
+    filterMode = 'date';
+    filterDateVal = e.target.value;
+    document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+    renderList();
+  }
+};
+$('requesterFilter').onchange = e => { requesterFilterVal = e.target.value; renderList(); };
+$('searchFilter').oninput = e => { searchVal = e.target.value.trim(); renderList(); };
+
+// Export Excel
+function exportExcel(isAll) {
+  const items = isAll ? [...requests] : getFiltered();
+  if (!items.length) { showToast('No entries to export', true); return; }
+
+  const rows = items.map(r => ({
+    'Date': r.date,
+    'Ref No.': r.ref,
+    'Brand': r.brand,
+    'Model': r.model,
+    'Qty': r.qty,
+    'Unit Value': r.value,
+    'Currency': r.currency,
+    'Exchange Rate (₹)': r.currency==='INR'?'':r.rate,
+    'Line Total (FC)': Number(r.lineFC.toFixed(2)),
+    'Line Total (INR)': Math.round(r.inrValue),
+    'Status': r.status,
+    'Requested By': r.requestedBy,
+    'Approved By': r.approvedBy || '',
+    'Edited By': r.editedBy || '',
+    'Remarks': r.remarks || '',
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Purchase Register');
+  XLSX.writeFile(wb, `KEI_Purchase_Register_${todayISO()}.xlsx`);
+
+  if (isAll) {
+    fetch('/api/meta', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:'done', by:currentUser?.name }) });
+    showToast('Backup downloaded and logged in MongoDB Atlas', false);
+  }
+}
+$('exportBtn').onclick = () => exportExcel(false);
+
+// Init
+$('todayLabel').innerHTML = 'Register Date · <b>' + fmtDate(todayISO()) + '</b>';
+renderRoleGrid();
+syncRate();
+setInterval(loadData, 7000);
+</script>
+</body>
+</html>
